@@ -152,6 +152,7 @@ scrape_configs:
 
 **Relevant screenshots**:    
 <img width="1355" height="138" alt="image" src="https://github.com/user-attachments/assets/86384d01-be2e-4259-802a-ef645c310551" />   
+<img width="1336" height="560" alt="image" src="https://github.com/user-attachments/assets/e651a21c-f906-4016-b2ff-00be440340a0" />  
 
 
 Prometheus scrape config:
@@ -168,6 +169,18 @@ global:
   - job_name: 'blog-webapp'
     static_configs:
       - targets: ['webapp:8080']
+
+```
+In this endpoint, we can see prometheus can reach its target endpoint as per the yml file above:  
+<img width="1235" height="317" alt="image" src="https://github.com/user-attachments/assets/e8f84502-b4e9-4439-a7ae-1586f1048279" />    
+Note that /metics endpoint was not in my blog-webapp previously, hence needed to add this code to main.py  
+
+```
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from fastapi import Response
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 ```
 
@@ -187,4 +200,96 @@ Going to Google account settings (https://myaccount.google.com/apppasswords), ge
       - GF_SMTP_STARTTLS_POLICY=Mandatory
 
 ```
+
+#### Alert Firing:
+
+If I cause the webapp to malfunction: ``
+Then prometheus target throws error > grafana alert is fired > email is sent to my inbox:  
+<img width="1310" height="451" alt="image" src="https://github.com/user-attachments/assets/c45a45a4-2f56-4949-a235-081435e6b7e1" />  
+
+<img width="1212" height="597" alt="image" src="https://github.com/user-attachments/assets/983a7d04-e892-4b1d-947d-6a7ad39e2752" />  
+<img width="1281" height="208" alt="image" src="https://github.com/user-attachments/assets/8fb76367-6b58-4afc-ac7d-2d1de4867f5d" />  
+<img width="916" height="371" alt="image" src="https://github.com/user-attachments/assets/de374175-e514-4aa2-8ccd-1f65ee414d51" />  
+
+**After restarting the container**, the down status of prometheus and grafana is back to normal.  
+
+### Troubleshooting:
+
+**Grafana cannnot connect to loki or "Data source connected, but no labels were received. Verify that Loki and Promtail are correctly configured."**
+
+Go to `alloy-values.yaml` and change this block:
+```
+loki.write "loki_endpoint" {
+  endpoint {
+    // internval
+    url = "http://172.31.3.125:3100/loki/api/v1/push"
+  }
+}
+
+```  
+Refresh the grafana page and click 'test and save' again.  
+
+More issues:  
+
+<img width="772" height="86" alt="image" src="https://github.com/user-attachments/assets/cf64b842-c90e-43cb-8fc9-ab585c56c9fa" />  
+
+correct alloy-values.yaml
+
+```
+
+cat alloy-values.yaml
+controller:
+  type: daemonset
+
+alloy:
+  configMap:
+    content: |
+      logging {
+        level  = "info"
+        format = "logfmt"
+      }
+
+      // 1. Discover Kubernetes Pods
+      discovery.k8s "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "pod_logs" {
+        targets = discovery.k8s.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action        = "replace"
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          action        = "replace"
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          action        = "replace"
+          target_label  = "container"
+        }
+      }
+
+      // 2. Collect Kubernetes Pod logs natively
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.loki_endpoint.receiver]
+      }
+
+      // 3. Forward logs to your host-based Loki instance
+      loki.write "loki_endpoint" {
+        endpoint {
+          url = "http://172.31.3.125:3100/loki/api/v1/push"
+        }
+      }
+      
+```
+Apply using: `helm upgrade alloy grafana/alloy -n monitoring -f alloy-values.yaml`.  Make sure that `kubectl get configmap alloy -n monitoring -o yaml | grep -c loki.source.kubernetes` returns 1
+
+
+
 
