@@ -7,7 +7,7 @@
 <img width="1073" height="578" alt="diagram" src="https://github.com/user-attachments/assets/d5ed03dd-3d4a-462b-98cf-5b15ab65e537" />  
 
 ---
-## ❗❕ If pictures are broken, please view this file from [github repository](./README.md) ❗
+## ❗❕ If pictures are broken, please view this file from [github repository](https://github.com/9mAhmad/observability-project-k8s-grafana-prometheus-loki-alloy/blob/main/README.md) ❗
 
 ## Work Log:  
 
