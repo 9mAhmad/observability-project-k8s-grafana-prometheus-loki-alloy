@@ -1,0 +1,48 @@
+controller:
+  type: daemonset
+
+alloy:
+  configMap:
+    content: |
+      logging {
+        level  = "info"
+        format = "logfmt"
+      }
+
+      // 1. Discover Kubernetes Pods
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action        = "replace"
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          action        = "replace"
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          action        = "replace"
+          target_label  = "container"
+        }
+      }
+
+      // 2. Collect Kubernetes Pod logs natively
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.loki_endpoint.receiver]
+      }
+
+      // 3. Forward logs to your host-based Loki instance
+      loki.write "loki_endpoint" {
+        endpoint {
+          url = "http://172.31.3.125:3100/loki/api/v1/push"
+        }
+      }
