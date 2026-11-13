@@ -1,4 +1,10 @@
-# observability-project-ec2-k8s-grafana-prom-loki
+## Summary of this Project:
+- Observability and monitoring stack in a AWS EC2 instance running Ubuntu 26. A pipeline using Docker Compose, combining Prometheus for metrics collection, Node Exporter for system metrics, Grafana for visualization/alerting, and Loki with Grafana Alloy for log aggregation.
+- Prometheus monitors /metrics endpoint of a python-fastapi blog CRUD webapp
+- SMTP alert from Grafana set up using 'google app password' to detect and target downtime automatically
+
+## Architectural Diagram
+<img width="1073" height="578" alt="diagram" src="https://github.com/user-attachments/assets/d5ed03dd-3d4a-462b-98cf-5b15ab65e537" />
 
 ## Work Log:  
 
