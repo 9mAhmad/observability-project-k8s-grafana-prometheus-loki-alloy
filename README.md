@@ -4,7 +4,10 @@
 - SMTP alert from Grafana set up using 'google app password' to detect and target downtime automatically
 
 ## Architectural Diagram
-<img width="1073" height="578" alt="diagram" src="https://github.com/user-attachments/assets/d5ed03dd-3d4a-462b-98cf-5b15ab65e537" />
+<img width="1073" height="578" alt="diagram" src="https://github.com/user-attachments/assets/d5ed03dd-3d4a-462b-98cf-5b15ab65e537" />  
+
+---
+## ❗❕ If pictures are broken, please view this file from [github repository](./README.md) ❗
 
 ## Work Log:  
 
